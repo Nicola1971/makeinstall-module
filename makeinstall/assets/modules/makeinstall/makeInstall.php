@@ -149,7 +149,7 @@ while ($template = $modx->db->getRow($templates)) {
  *
  * $tpDesc
  *
- * @category	snippet
+ * @category	template
  * @internal	@modx_category $tpCat
  */
 
