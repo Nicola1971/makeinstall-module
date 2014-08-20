@@ -1,3 +1,13 @@
+/**
+* MakeInstall
+*
+* Create MODx Evo installer tpl files from current elements
+*
+* @category module
+* @version 1.1 pl
+* @license http://www.gnu.org/copyleft/gpl.html GNU Public License (GPL)
+* @internal @installset base
+*/
 <?php
 // MakeInstall module
 // Create MODx Evo 1.0.4 installer tpl files from current elements
