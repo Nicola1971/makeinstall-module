@@ -1,13 +1,3 @@
-/**
-* MakeInstall
-*
-* Create MODx Evo installer tpl files from current elements
-*
-* @category module
-* @version 1.1 pl
-* @license http://www.gnu.org/copyleft/gpl.html GNU Public License (GPL)
-* @internal @installset base
-*/
 <?php
 // MakeInstall module
 // Create MODx Evo 1.0.4 installer tpl files from current elements
@@ -19,6 +9,7 @@ $stables = array(
 	'chunks'     => $modx->getFullTableName('site_htmlsnippets'),
 	'modules'    => $modx->getFullTableName('site_modules'),
 	'snippets'   => $modx->getFullTableName('site_snippets'),
+	'plugins'    => $modx->getFullTableName('site_plugins'),
 	'tvs'        => $modx->getFullTableName('site_tmplvars'),
 	'templates'  => $modx->getFullTableName('site_templates'),
 	'tv_ties'    => $modx->getFullTableName('site_tmplvar_templates'),
@@ -137,6 +128,43 @@ SNIPPET;
 
 	file_put_contents($fPath, $element);
 	echo "Saved snippet: $snName <br />";
+}
+
+// Process plugins
+$element = NULL;
+$plugins = $modx->db->select('name,description,category,plugincode,properties,disabled', $stables['plugins']);
+
+while ($plugins = $modx->db->getRow($plugins)) {
+	$plName = $plugins['name'];
+	$plDesc = $plugins['description'];
+	$plCat  = $cats[$plugins['category']];
+	$plCode = $plugins['plugincode'];
+    $plProp = $plugins['properties'];
+    $plDis = $plugins['disabled'];
+
+	$element = <<<PLUGINS
+/**
+ * $plName
+ *
+ * $plDesc
+ *
+ * @category	plugins
+ * @internal	@modx_category $snCat
+ * @license 	http://www.gnu.org/copyleft/gpl.html GNU Public License (GPL)
+ * @internal @events 
+ * @internal @installset base
+ * @internal @modx_category $plCat
+ * @internal @properties $plProp
+ */
+
+PLUGINS;
+
+	$element .= $plCode;
+	$fPath = $exportDir . 'plugins/' . preg_replace('#[^a-z_A-Z\-0-9\s\.]#',"",$plName);
+	$fPath .= '.tpl';
+
+	file_put_contents($fPath, $element);
+	echo "Saved plugins: $plName <br />";
 }
 
 // Process templates
