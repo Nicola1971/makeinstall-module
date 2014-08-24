@@ -1,15 +1,19 @@
-MakeInstall
+MakeInstall Module for Modx Evolution
 ===============
 
-modx module to create tpl files for MODX Evo installer
+Export tpl files from snippets, chunks, templates and modules for MODX Evo installer
 
-Taken from PubKit package 
 
+# Taken from PubKit package 
 Original author Keith Penton (KP52)
 https://github.com/kp52
 
-Updates:
+### Updates:
 
 Update: 1.2  	first step in plugin export process
 
 Update: 1.1  	Installer for Package manager or Store Module 
+
+## To do:
+
+Plugin Export
