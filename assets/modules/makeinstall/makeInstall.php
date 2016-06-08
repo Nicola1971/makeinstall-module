@@ -134,37 +134,36 @@ SNIPPET;
 $element = NULL;
 $plugins = $modx->db->select('name,description,category,plugincode,properties,disabled', $stables['plugins']);
 
-while ($plugins = $modx->db->getRow($plugins)) {
-	$plName = $plugins['name'];
-	$plDesc = $plugins['description'];
-	$plCat  = $cats[$plugins['category']];
-	$plCode = $plugins['plugincode'];
-    $plProp = $plugins['properties'];
-    $plDis = $plugins['disabled'];
+while ($plugin = $modx->db->getRow($plugins)) {
+	$plName = $plugin['name'];
+	$plDesc = $plugin['description'];
+	$plCat  = $cats[$plugin['category']];
+	$plCode = $plugin['plugincode'];
+    $plProp = $plugin['properties'];
+    $plDis = $plugin['disabled'];
 
-	$element = <<<PLUGINS
+	$element = <<<PLUGIN
 /**
  * $plName
  *
  * $plDesc
  *
  * @category	plugins
- * @internal	@modx_category $snCat
+ * @internal	@modx_category $plCat
  * @license 	http://www.gnu.org/copyleft/gpl.html GNU Public License (GPL)
  * @internal @events 
  * @internal @installset base
- * @internal @modx_category $plCat
  * @internal @properties $plProp
  */
 
-PLUGINS;
+PLUGIN;
 
 	$element .= $plCode;
 	$fPath = $exportDir . 'plugins/' . preg_replace('#[^a-z_A-Z\-0-9\s\.]#',"",$plName);
 	$fPath .= '.tpl';
 
 	file_put_contents($fPath, $element);
-	echo "Saved plugins: $plName <br />";
+	echo "Saved plugin: $plName <br />";
 }
 
 // Process templates
