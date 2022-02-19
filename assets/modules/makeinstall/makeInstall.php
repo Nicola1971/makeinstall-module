@@ -1,6 +1,6 @@
 <?php
 // MakeInstall module
-// Create MODx Evo 1.0.4 installer tpl files from current elements
+// Create MODx Evo 1.4.x installer tpl files from current elements
 
 $nl = "\n\n";
 
@@ -56,6 +56,9 @@ while ($chunk = $modx->db->getRow($chunks)) {
  *
  * @category	chunk
  * @internal @modx_category $chCat
+ * @license 	http://www.gnu.org/copyleft/gpl.html GNU Public License (GPL)
+ * @internal    @installset base
+ * @internal    @overwrite false
  */
 
 CHUNK;
@@ -188,6 +191,11 @@ while ($template = $modx->db->getRow($templates)) {
  *
  * @category	template
  * @internal	@modx_category $tpCat
+ * @version 	1.0
+ * @license 	http://www.gnu.org/copyleft/gpl.html GNU Public License (GPL)
+ * @internal	@lock_template 0
+ * @internal    @installset base
+ * @internal    @overwrite false
  */
 
 TEMPLATE;
@@ -239,6 +247,7 @@ while ($tv = $modx->db->getRow($tvs)) {
  * @internal    @input_default $tvDefault
  * @internal	@output_widget $tvWidget
  * @internal	@output_widget_params $tvParams
+ * @internal    @lock_tv 0
  * @internal    @template_assignments $assign
  */
 
