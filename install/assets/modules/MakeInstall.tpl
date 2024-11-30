@@ -1,9 +1,10 @@
 /**
  * MakeInstall
  *
- * Create tpl files for MODX Evo installer
+ * Create tpl files for Evolution CMS installer
  *
  * @category	module
+ * @version     1.3
  * @internal	@modx_category PubKit
  * @internal	@properties &exportDir=Export to;string;
  * @license 	http://www.gnu.org/copyleft/gpl.html GNU Public License (GPL)
