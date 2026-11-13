@@ -1,17 +1,23 @@
 <?php
 // MakeInstall module for Evolution CMS
 
-$exportDir = MODX_BASE_PATH . 'assets/export/';
+// Export folder from the module configuration (&exportDir), default assets/export/
+// A relative path is resolved from the site root, an absolute path is used as is.
+$exportDir = (isset($exportDir) && trim($exportDir) !== '') ? trim($exportDir) : 'assets/export/';
+if (!preg_match('#^(/|[A-Za-z]:[\\\\/])#', $exportDir)) {
+    $exportDir = MODX_BASE_PATH . ltrim($exportDir, '/\\');
+}
+$exportDir = rtrim($exportDir, '/\\') . '/';
 
-if (!file_exists($exportDir)) {
-    mkdir($exportDir, 0777, true);
+if (!is_dir($exportDir)) {
+    mkdir($exportDir, 0755, true);
 }
 
 $subDirs = ['chunks', 'modules', 'plugins', 'snippets', 'templates', 'tvs'];
 foreach ($subDirs as $subDir) {
     $subPath = $exportDir . $subDir;
-    if (!file_exists($subPath)) {
-        mkdir($subPath, 0777, true);
+    if (!is_dir($subPath)) {
+        mkdir($subPath, 0755, true);
     }
 }
 
@@ -25,6 +31,8 @@ $stables = [
     'tvs' => $modx->getFullTableName('site_tmplvars'),
     'templates' => $modx->getFullTableName('site_templates'),
     'tv_ties' => $modx->getFullTableName('site_tmplvar_templates'),
+    'plugin_events' => $modx->getFullTableName('site_plugin_events'),
+    'event_names' => $modx->getFullTableName('system_eventnames'),
     'settings' => $modx->getFullTableName('system_settings')
 ];
 
@@ -35,11 +43,15 @@ while ($cat = $modx->db->getRow($cat_names)) {
     $cats[$cat['id']] = $cat['category'];
 }
 // design
+$moduleName  = $moduleName ?? 'Make Install';
+$charset     = $modx_manager_charset ?? ($modx->config['modx_charset'] ?? 'UTF-8');
+$nl          = '<br />';
 
 echo '
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
+<html>
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset='.$modx_manager_charset.'" />
+    <meta http-equiv="Content-Type" content="text/html; charset=' . $charset . '" />
     <title>' . $moduleName . '</title>
     <link type="text/css" rel="stylesheet" href="media/style/' . $modx->config['manager_theme'] . '/style.css">
 </head>
@@ -98,7 +110,7 @@ if ($modx->db->getRecordCount($modules) == 0) {
 while ($module = $modx->db->getRow($modules)) {
 	$mdName = $module['name'];
 	$mdDesc = $module['description'];
-	$mdCat  = $cats[$module['category']];
+	$mdCat  = $cats[$module['category']] ?? 'Uncategorized';
 	$mdCode = $module['modulecode'];
     
     if (empty($mdName) || empty($mdCode)) {
@@ -133,14 +145,14 @@ MODULE;
 // Process snippets
 $element = NULL;
 $snippets = $modx->db->select('name,description,category,snippet', $stables['snippets']);
-if ($modx->db->getRecordCount($modules) == 0) {
+if ($modx->db->getRecordCount($snippets) == 0) {
     echo "No snippets founds!<br />";
 }
 
 while ($snippet = $modx->db->getRow($snippets)) {
 	$snName = $snippet['name'];
 	$snDesc = $snippet['description'];
-	$snCat  = $cats[$snippet['category']];
+	$snCat  = $cats[$snippet['category']] ?? 'Uncategorized';
 	$snCode = $snippet['snippet'];
     
     if (empty($snName) || empty($snCode)) {
@@ -174,18 +186,31 @@ SNIPPET;
 
 // Process plugins
 $element = NULL;
-$plugins = $modx->db->select('name,description,category,plugincode,properties,disabled', $stables['plugins']);
-if ($modx->db->getRecordCount($modules) == 0) {
+$plugins = $modx->db->select('id,name,description,category,plugincode,properties,disabled', $stables['plugins']);
+if ($modx->db->getRecordCount($plugins) == 0) {
     echo "No plugins founds!<br />";
 }
 
 while ($plugin = $modx->db->getRow($plugins)) {
 	$plName = $plugin['name'];
 	$plDesc = $plugin['description'];
-	$plCat  = $cats[$plugin['category']];
+	$plCat  = $cats[$plugin['category']] ?? 'Uncategorized';
 	$plCode = $plugin['plugincode'];
     $plProp = $plugin['properties'];
     $plDis = $plugin['disabled'];
+
+    // Events assigned to the plugin (comma-separated list for the installer)
+    $plEventList = [];
+    $evRes = $modx->db->query(
+        'SELECT en.name FROM ' . $stables['plugin_events'] . ' pe'
+        . ' INNER JOIN ' . $stables['event_names'] . ' en ON en.id = pe.evtid'
+        . ' WHERE pe.pluginid = ' . (int)$plugin['id']
+        . ' ORDER BY pe.priority, en.name'
+    );
+    while ($evRow = $modx->db->getRow($evRes)) {
+        $plEventList[] = $evRow['name'];
+    }
+    $plEvents = implode(',', array_unique($plEventList));
     
     if (empty($plName) || empty($plCode)) {
         echo "Plugin not valid: Name or code empty. <br />";
@@ -201,7 +226,7 @@ while ($plugin = $modx->db->getRow($plugins)) {
  * @category	plugins
  * @internal	@modx_category $plCat
  * @license 	http://www.gnu.org/copyleft/gpl.html GNU Public License (GPL)
- * @internal @events 
+ * @internal @events $plEvents
  * @internal @installset base
  * @internal @properties $plProp
  */
@@ -229,7 +254,7 @@ if ($modx->db->getRecordCount($templates) == 0) {
 while ($template = $modx->db->getRow($templates)) {
 	$tpName = $template['templatename'];
 	$tpDesc = $template['description'];
-	$tpCat  = $cats[$template['category']];
+	$tpCat  = $cats[$template['category']] ?? 'Uncategorized';
 	$tpCode = $template['content'];
 
 // save template ID => name pairs for TV assignments
@@ -280,7 +305,7 @@ while ($tv = $modx->db->getRow($tvs)) {
 	$tvType = $tv['type'];
 	$tvCaption  = $tv['caption'];
 	$tvDesc = $tv['description'];
-	$tvCat  = $cats[$tv['category']];
+	$tvCat  = $cats[$tv['category']] ?? 'Uncategorized';
 	$tvOptions = $tv['elements'];
 	$tvDefault = $tv['default_text'];
 	$tvWidget = $tv['display'];
@@ -288,11 +313,13 @@ while ($tv = $modx->db->getRow($tvs)) {
 
 	$qString = 'tmplvarid = ' . $tv['id'];
 	$assignments = $modx->db->select('templateid', $stables['tv_ties'], $qString);
-	$assign = NULL;
+	$assignList = [];
 	while ($templateId = $modx->db->getValue($assignments)) {
-		$assign .= $templateNames[$templateId] . ',';
+		if (isset($templateNames[$templateId])) {
+			$assignList[] = $templateNames[$templateId];
+		}
 	}
-	$assign = (!empty($assign)) ? substr($assign,0,-1) : NULL;
+	$assign = implode(',', $assignList);
     
     if (empty($tvName)) {
         echo "Tv not valid: Name empty. <br />";
@@ -319,8 +346,6 @@ while ($tv = $modx->db->getRow($tvs)) {
 
 TV;
 
-	$element .= $tvCode;
-
 	$fPath = $exportDir . 'tvs/' . preg_replace('#[^a-z_A-Z\-0-9\s\.]#',"",$tvName);
 	$fPath .= '.tpl';
 
@@ -337,5 +362,6 @@ echo ' </div>
     </div>
 </div>
 </div>
+</body>
+</html>
 ';
-?>
